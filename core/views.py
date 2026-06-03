@@ -2,6 +2,7 @@ from django.shortcuts import render
 from .models import Project, Education, Talk
 
 
+
 def home(request):
     projects = Project.objects.all()
     education = Education.objects.all()
@@ -11,3 +12,7 @@ def home(request):
         'education': education,
         'talks': talks,
     })
+
+
+def event(request):
+    return render(request, 'core/event.html')

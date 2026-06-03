@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mohamed Hanou  Event Mode</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#050000;
+      --bg2:#0a0000;
+      --bg3:#120000;
+      --red:#dc2626;
+      --red2:#ef4444;
+      --white:#ffffff;
+      --text:#909090;
+      --text2:#d0d0d0;
+      --border:rgba(255,255,255,0.06);
+      --border2:rgba(255,255,255,0.12);
+      --sans:'Inter',sans-serif;
+      --mono:'JetBrains Mono',monospace;
+      --display:'Bebas Neue',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;}
+    a{text-decoration:none;color:inherit;}
+
+    /* SCANLINES */
+    .scanlines{position:fixed;inset:0;z-index:5;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);}
+
+    /* PARTICLES */
+    #cv{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0.4;}
+
+    /* CURSOR */
+    .cur{position:fixed;width:8px;height:8px;border-radius:50%;background:var(--red);pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;}
+    .cur-ring{position:fixed;width:30px;height:30px;border-radius:50%;border:1px solid rgba(220,38,38,0.5);pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all 0.08s;}
+
+    /* NAV */
+    /* NAV */
+    .nav{
+      position:fixed;top:0;left:0;right:0;z-index:999;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:1.1rem 3rem;
+      background:rgba(5,0,0,0.88);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .nav-logo{
+      font-family:'Inter',sans-serif;
+      font-size:1.1rem;font-weight:800;
+      color:var(--white);
+      letter-spacing:-0.5px;
+      display:flex;align-items:center;gap:10px;
+    }
+    .nav-logo-tag{
+      font-size:0.62rem;font-weight:500;
+      font-family:'Inter',sans-serif;
+      color:var(--red);
+      background:rgba(220,38,38,0.1);
+      border:1px solid rgba(220,38,38,0.25);
+      padding:0.15rem 0.5rem;border-radius:2px;
+      letter-spacing:0.08em;text-transform:uppercase;
+    }
+    .nav-links{display:flex;gap:2rem;list-style:none;align-items:center;}
+    .nav-links a{
+      font-family:'Inter',sans-serif;
+      font-size:0.88rem;font-weight:500;
+      color:rgba(255,255,255,0.5);
+      transition:color 0.2s;
+    }
+    .nav-links a:hover{color:var(--white);}
+    .nav-switch{
+      font-family:'Inter',sans-serif;
+      font-size:0.82rem;font-weight:600;
+      padding:0.45rem 1.1rem;
+      border:1px solid rgba(14,165,233,0.3);
+      color:#38bdf8;border-radius:4px;
+      transition:background 0.2s,color 0.2s;
+      display:inline-block;
+    }
+    .nav-switch:hover{background:rgba(14,165,233,0.1);color:#fff;}
+    .nav-burger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;}
+    .nav-burger span{display:block;width:22px;height:1.5px;background:rgba(255,255,255,0.5);}
+
+    /* ============================================
+       HERO  FULLSCREEN VIDEO
+       ============================================ */
+    .hero-video{
+      position:relative;
+      height:100vh;
+      overflow:hidden;
+      display:flex;align-items:flex-end;
+    }
+    .hero-video video{
+      position:absolute;inset:0;
+      width:100%;height:100%;
+      object-fit:cover;
+      filter:saturate(1.1) contrast(1.05);
+    }
+    .hero-video::after{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(
+        to top,
+        rgba(5,0,0,1) 0%,
+        rgba(5,0,0,0.6) 30%,
+        rgba(5,0,0,0.2) 60%,
+        transparent 100%
+      );
+      z-index:2;
+    }
+    /* RED TINT */
+    .hero-video::before{
+      content:'';position:absolute;inset:0;
+      background:rgba(180,0,0,0.08);
+      z-index:2;
+    }
+
+    .hero-content{
+      position:relative;z-index:3;
+      padding:0 3rem 5rem;
+      width:100%;
+      max-width:1400px;margin:0 auto;
+    }
+
+    .hero-eyebrow{
+      font-family:var(--mono);font-size:0.72rem;color:var(--red);
+      letter-spacing:0.2em;margin-bottom:1rem;
+      display:flex;align-items:center;gap:10px;
+      opacity:0;animation:up 0.5s 0.2s forwards;
+    }
+    .hero-eyebrow::before{content:'';width:28px;height:1px;background:var(--red);}
+
+    .hero-big{
+      font-family:var(--display);
+      font-size:clamp(5rem,12vw,14rem);
+      color:var(--white);line-height:0.85;
+      letter-spacing:2px;
+      margin-bottom:1.5rem;
+      opacity:0;animation:up 0.6s 0.35s forwards;
+    }
+    .hero-big .red{color:var(--red);}
+
+    .hero-row{
+      display:flex;align-items:flex-end;justify-content:space-between;
+      flex-wrap:wrap;gap:2rem;
+      opacity:0;animation:up 0.5s 0.55s forwards;
+    }
+    .hero-desc{
+      max-width:480px;
+      font-size:1rem;color:var(--text2);line-height:1.8;
+    }
+    .hero-desc strong{color:var(--white);}
+    .hero-pills{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:1rem;}
+    .pill{font-family:var(--mono);font-size:0.68rem;padding:0.22rem 0.7rem;border-radius:3px;}
+    .pr{background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);color:#f87171;}
+    .pw{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);}
+
+    .hero-stats{display:flex;gap:2.5rem;}
+    .hst{text-align:center;}
+    .hst-n{display:block;font-family:var(--display);font-size:3rem;color:var(--white);line-height:1;}
+    .hst-l{font-family:var(--mono);font-size:0.6rem;color:var(--red);letter-spacing:0.1em;}
+
+    /* SCROLL INDICATOR */
+    .scroll-ind{
+      position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);
+      z-index:3;display:flex;flex-direction:column;align-items:center;gap:6px;
+      font-family:var(--mono);font-size:0.6rem;color:rgba(255,255,255,0.3);
+      letter-spacing:0.15em;animation:float 2s infinite;
+    }
+    .scroll-ind::after{content:'';width:1px;height:40px;background:linear-gradient(to bottom,rgba(220,38,38,0.6),transparent);}
+    @keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-6px)}}
+
+    @keyframes up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .reveal{opacity:0;transform:translateY(24px);transition:opacity 0.65s ease,transform 0.65s ease;}
+    .reveal.visible{opacity:1;transform:translateY(0);}
+
+    /* SECTIONS */
+    .sec{padding:7rem 3rem;max-width:1400px;margin:0 auto;position:relative;z-index:2;}
+    .sec-dark{background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;z-index:2;}
+    .sec-dark .inner{max-width:1400px;margin:0 auto;padding:7rem 3rem;}
+    .sh{display:flex;align-items:center;gap:1rem;margin-bottom:3rem;}
+    .sh-n{font-family:var(--mono);font-size:0.68rem;color:var(--red);letter-spacing:0.15em;}
+    .sh h2{font-family:var(--display);font-size:3rem;color:var(--white);letter-spacing:1px;}
+    .sh-line{flex:1;height:1px;background:var(--border);}
+
+    /* ============================================
+       VIDEO REEL SECTION
+       ============================================ */
+    .reel-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      grid-template-rows:auto auto;
+      gap:1rem;
+    }
+    .reel-item{
+      position:relative;border-radius:12px;overflow:hidden;
+      border:1px solid var(--border);
+      transition:border-color 0.25s,transform 0.25s;
+      background:var(--bg2);
+      cursor:pointer;
+    }
+    .reel-item:hover{border-color:rgba(220,38,38,0.35);transform:scale(1.01);}
+    .reel-item.big{grid-column:1/-1;}
+
+    .reel-item video{
+      width:100%;display:block;
+      object-fit:cover;
+    }
+    .reel-item:not(.big) video{height: 350px;}
+    .reel-item.big video{height:420px;}
+
+    .reel-overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(to top,rgba(5,0,0,0.75) 0%,transparent 50%);
+      display:flex;align-items:flex-end;
+      padding:1.25rem;
+      transition:background 0.3s;
+    }
+    .reel-item:hover .reel-overlay{background:linear-gradient(to top,rgba(5,0,0,0.6) 0%,rgba(220,38,38,0.05) 100%);}
+
+    .reel-label{
+      font-family:var(--mono);font-size:0.68rem;
+      color:rgba(255,255,255,0.7);letter-spacing:0.08em;
+    }
+    .reel-label strong{display:block;font-size:0.85rem;color:var(--white);font-family:var(--sans);font-weight:700;margin-bottom:2px;}
+
+    /* PLAY BUTTON */
+    .play-btn{
+      position:absolute;top:50%;left:50%;
+      transform:translate(-50%,-50%);
+      width:56px;height:56px;border-radius:50%;
+      background:rgba(220,38,38,0.85);
+      display:flex;align-items:center;justify-content:center;
+      transition:transform 0.2s,background 0.2s;
+      backdrop-filter:blur(4px);
+    }
+    .reel-item:hover .play-btn{transform:translate(-50%,-50%) scale(1.1);background:var(--red);}
+    .play-btn svg{width:20px;height:20px;fill:white;margin-left:3px;}
+
+    /* ============================================
+       EVENTS  MAGAZINE LAYOUT
+       ============================================ */
+    .mag-grid{
+      display:grid;
+      grid-template-columns:1.4fr 1fr;
+      grid-template-rows:auto auto;
+      gap:1.25rem;
+    }
+
+    .mag-card{
+      position:relative;border-radius:14px;overflow:hidden;
+      border:1px solid var(--border);
+      transition:border-color 0.25s;
+      background:var(--bg2);
+    }
+    .mag-card:hover{border-color:rgba(220,38,38,0.3);}
+    .mag-card.tall{grid-row:1/3;}
+
+    .mag-img{position:relative;overflow:hidden;}
+    .mag-card.tall .mag-img{height:600px;}
+    .mag-card:not(.tall) .mag-img{height:260px;}
+    .mag-img img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;transition:transform 0.5s;}
+    .mag-card:hover .mag-img img{transform:scale(1.04);}
+    .mag-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(5,0,0,0.85) 0%,transparent 55%);}
+
+    /* NUMBER OVERLAY */
+    .mag-num{
+      position:absolute;top:1rem;right:1rem;
+      font-family:var(--display);font-size:5rem;
+      color:rgba(255,255,255,0.06);line-height:1;
+      pointer-events:none;z-index:1;
+    }
+
+    .mag-badge{
+      position:absolute;top:1rem;left:1rem;z-index:2;
+      font-family:var(--mono);font-size:0.6rem;
+      padding:0.2rem 0.65rem;border-radius:2px;
+      background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.3);
+      color:#f87171;letter-spacing:0.08em;text-transform:uppercase;
+    }
+    .mag-year{
+      position:absolute;bottom:4.5rem;right:1rem;z-index:2;
+      font-family:var(--mono);font-size:0.6rem;color:rgba(255,255,255,0.4);
+    }
+
+    .mag-body{padding:1.25rem;}
+    .mag-brand{font-family:var(--mono);font-size:0.65rem;color:var(--red);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;}
+    .mag-card h3{font-size:1.1rem;font-weight:800;color:var(--white);margin-bottom:0.4rem;}
+    .mag-card p{font-size:0.84rem;color:var(--text);line-height:1.8;}
+
+    /* ============================================
+       QUOTE STRIP
+       ============================================ */
+    .quote-strip{
+      position:relative;z-index:2;
+      padding:5rem 3rem;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      overflow:hidden;
+    }
+    .quote-strip::before{
+      content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+      background:linear-gradient(to bottom,transparent,var(--red),transparent);
+    }
+    .q-inner{max-width:900px;margin:0 auto;}
+    .q-mark{font-family:var(--display);font-size:8rem;color:var(--red);opacity:0.12;line-height:1;margin-bottom:-2rem;}
+    .q-text{font-size:clamp(1.6rem,3.5vw,2.8rem);font-weight:800;color:var(--white);line-height:1.2;letter-spacing:-0.5px;margin-bottom:1rem;}
+    .q-by{font-family:var(--mono);font-size:0.78rem;color:var(--red);letter-spacing:0.1em;}
+
+    /* ============================================
+       BRANDS  TICKER TAPE
+       ============================================ */
+    .ticker-wrap{overflow:hidden;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1rem 0;background:var(--bg2);}
+    .ticker{display:flex;gap:0;animation:ticker 20s linear infinite;white-space:nowrap;}
+    .ticker-item{
+      display:inline-flex;align-items:center;gap:0.5rem;
+      padding:0 2rem;
+      font-family:var(--display);font-size:1.1rem;letter-spacing:2px;color:rgba(255,255,255,0.25);
+      border-right:1px solid var(--border);
+    }
+    .ticker-item span{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;}
+    @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+    /* BRANDS GRID */
+    .brands-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);}
+    .brand-card{
+      background:var(--bg2);
+      padding:2.5rem 2rem;
+      display:flex;flex-direction:column;gap:1rem;
+      transition:background 0.2s;
+    }
+    .brand-card:hover{background:var(--bg3);}
+    .brand-top{display:flex;align-items:center;gap:1rem;}
+    .brand-icon{
+      width:48px;height:48px;border-radius:8px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.5rem;flex-shrink:0;
+      background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.15);
+    }
+    .brand-name{font-size:1rem;font-weight:800;color:var(--white);}
+    .brand-role{font-family:var(--mono);font-size:0.65rem;color:var(--text);letter-spacing:0.05em;}
+    .brand-desc{font-size:0.84rem;color:var(--text);line-height:1.75;}
+
+    /* ============================================
+       CONTACT
+       ============================================ */
+    .ct-wrap{
+      text-align:center;max-width:700px;margin:0 auto;
+      padding:7rem 2rem;position:relative;z-index:2;
+    }
+    .ct-tag{font-family:var(--mono);font-size:0.72rem;color:var(--red);letter-spacing:0.12em;margin-bottom:1.5rem;}
+    .ct-h{
+      font-family:var(--display);
+      font-size:clamp(4rem,8vw,8rem);
+      color:var(--white);line-height:0.9;letter-spacing:2px;
+      margin-bottom:1.5rem;
+    }
+    .ct-h span{color:var(--red);}
+    .ct-sub{font-size:1rem;color:var(--text);margin-bottom:2.75rem;line-height:1.8;max-width:480px;margin-left:auto;margin-right:auto;}
+    .ct-btns{display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.75rem;}
+    .btn-red{padding:0.85rem 2.5rem;background:var(--red);color:#fff;font-family:var(--sans);font-weight:700;font-size:0.9rem;border-radius:5px;display:inline-block;transition:opacity 0.2s,transform 0.15s;}
+    .btn-red:hover{opacity:0.85;transform:translateY(-2px);}
+    .btn-ghost{padding:0.85rem 1.75rem;border:1px solid var(--border2);color:var(--text2);font-family:var(--sans);font-weight:500;font-size:0.9rem;border-radius:5px;display:inline-block;transition:border-color 0.2s,color 0.2s;}
+    .btn-ghost:hover{border-color:var(--red);color:var(--red);}
+    .ct-links{display:flex;justify-content:center;gap:2rem;margin-bottom:3.5rem;}
+    .ct-links a{font-family:var(--mono);font-size:0.78rem;color:var(--text);transition:color 0.2s;}
+    .ct-links a:hover{color:var(--red);}
+
+    .quote-final{
+      border-top:1px solid var(--border);
+      padding-top:3rem;
+      position:relative;
+    }
+    .quote-final::before{
+      content:'"';
+      font-family:'Bebas Neue',sans-serif;
+      font-size:12rem;
+      color:var(--red);
+      opacity:0.08;
+      position:absolute;
+      top:-2rem;left:-1rem;
+      line-height:1;
+      pointer-events:none;
+    }
+    .qf-text{
+      font-family:'Inter',sans-serif;
+      font-size:clamp(1.2rem,2.5vw,1.75rem);
+      font-weight:700;
+      color:var(--white);
+      line-height:1.4;
+      letter-spacing:-0.3px;
+      margin-bottom:1rem;
+      font-style:normal;
+    }
+    .qf-by{
+      font-family:'Inter',sans-serif;
+      font-size:0.82rem;
+      font-weight:600;
+      color:var(--red);
+      letter-spacing:0.05em;
+      text-transform:uppercase;
+    }
+
+    .footer{
+      padding:1.5rem 3rem;
+      display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;
+      font-family:var(--mono);font-size:0.68rem;color:var(--text);
+      border-top:1px solid var(--border);
+      position:relative;z-index:2;
+    }
+
+    /* RESPONSIVE */
+    @media(max-width:960px){
+      .nav{padding:1rem 1.5rem;}
+      .nav-links{display:none;}
+      .nav-burger{display:flex;}
+      .mag-grid{grid-template-columns:1fr;}
+      .mag-card.tall{grid-row:auto;}
+      .mag-card.tall .mag-img{height:320px;}
+      .reel-grid{grid-template-columns:1fr;}
+      .reel-item.big{grid-column:1;}
+      .brands-grid{grid-template-columns:1fr;}
+      body{cursor:auto;}
+      .cur,.cur-ring{display:none;}
+    }
+    @media(max-width:640px){
+      .sec{padding:4rem 1.25rem;}
+      .hero-content{padding:0 1.25rem 4rem;}
+      .hero-big{font-size:clamp(4rem,18vw,7rem);}
+      .hero-row{flex-direction:column;align-items:flex-start;}
+      .hero-stats{gap:1.5rem;}
+      .quote-strip{padding:3rem 1.25rem;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<canvas id="cv"></canvas>
+<div class="cur" id="cur"></div>
+<div class="cur-ring" id="cur-ring"></div>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">
+    Mohamed Hanou
+    <span class="nav-logo-tag">Event Mode</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#reel">Reel</a></li>
+    <li><a href="#events">Events</a></li>
+    <li><a href="#brands">Brands</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="{% url 'home' %}" class="nav-switch">Dev Mode</a></li>
+  </ul>
+  <button class="nav-burger" id="burger"><span></span><span></span><span></span></button>
+</nav>
+<div class="mob" id="mob">
+  <a href="#reel">./reel</a>
+  <a href="#events">./events</a>
+  <a href="#brands">./brands</a>
+  <a href="#contact">./contact</a>
+  <a href="{% url 'home' %}">Dev Mode</a>
+</div>
+
+<!-- ============================================
+     HERO  VIDEO BACKGROUND
+     ============================================ -->
+<div class="hero-video">
+  <video autoplay muted loop playsinline>
+    <source src="/media/4642FCA6-9EDD-4FD6-B34D-BF020C81E3FD.mp4" type="video/mp4"/>
+    <source src="/media/IMG_6425.mp4" type="video/mp4"/>
+  </video>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">alter ego · activated · montreal</div>
+    <div class="hero-big">
+      EVENT<br><span class="red">MOHA.</span>
+    </div>
+    <div class="hero-row">
+      <div>
+        <p class="hero-desc">
+          When the laptop closes, the real show starts.<br>
+          <strong>Brand ambassador. Field operator. Crowd connector.</strong><br>
+          From F1 pit lanes to Saputo Stadium  same energy, different arena.
+        </p>
+        <div class="hero-pills" style="margin-top:1rem;">
+          <span class="pill pr">F1 Grand Prix</span>
+          <span class="pill pr">CF Montreal</span>
+          <span class="pill pr">Molson</span>
+          <span class="pill pr">REM Metro</span>
+          <span class="pill pw">Promo Staff XM</span>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hst"><span class="hst-n">10+</span><span class="hst-l">EVENTS</span></div>
+        <div class="hst"><span class="hst-n">4+</span><span class="hst-l">BRANDS</span></div>
+        <div class="hst"><span class="hst-n">MTL</span><span class="hst-l">BASED</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-ind">SCROLL</div>
+</div>
+
+<!-- ============================================
+     VIDEO REEL
+     ============================================ -->
+<section class="sec" id="reel">
+  <div class="sh reveal">
+    <span class="sh-n">00</span>
+    <h2>Reel</h2>
+    <div class="sh-line"></div>
+  </div>
+  <div class="reel-grid">
+
+    <div class="reel-item big reveal" onclick="playVideo(this)">
+      <video loop muted playsinline preload="metadata">
+        <source src="/media/IMG_6425.mp4"" type="video/mp4"/>
+      </video>
+      <div class="reel-overlay">
+        <div class="reel-label">
+          <strong>Field Operations</strong>
+          Brand activation · Montreal 2025
+        </div>
+      </div>
+      <div class="play-btn">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+
+    <div class="reel-item reveal" onclick="playVideo(this)">
+      <video loop muted playsinline preload="metadata">
+        <source src="/media/E12724BD-EAB4-4DAF-A500-A869F72F9D1D.mp4" type="video/mp4"/>
+      </video>
+      <div class="reel-overlay">
+        <div class="reel-label">
+          <strong>Event Coverage</strong>
+          Live activation · 2025
+        </div>
+      </div>
+      <div class="play-btn">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+
+    <div class="reel-item reveal" onclick="playVideo(this)">
+      <video loop muted playsinline preload="metadata">
+        <source src="/media/017DB32F-BBE9-4BD2-B06D-E765ED559E26.mp4" type="video/mp4"/>
+      </video>
+      <div class="reel-overlay">
+        <div class="reel-label">
+          <strong>Behind the Scenes</strong>
+          On the ground · Montreal
+        </div>
+      </div>
+      <div class="play-btn">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- QUOTE 1 -->
+<div class="quote-strip reveal">
+  <div class="q-inner">
+    <div class="q-mark">"</div>
+    <div class="q-text">Two sides. One person.<br>The code builds the world.<br>The events bring it to life.</div>
+    <div class="q-by"> Both modes required</div>
+  </div>
+</div>
+
+<!-- ============================================
+     EVENTS  MAGAZINE LAYOUT
+     ============================================ -->
+<section class="sec" id="events">
+  <div class="sh reveal">
+    <span class="sh-n">01</span>
+    <h2>Events</h2>
+    <div class="sh-line"></div>
+  </div>
+  <div class="mag-grid">
+
+    <!-- TALL CARD  F1 -->
+    <article class="mag-card tall reveal">
+      <div class="mag-img">
+        <img src="/media/IMG_2295.jpg" alt="F1 Grand Prix du Canada" style="object-position:center 20%;"/>
+        <div class="mag-badge">Formula 1</div>
+        <div class="mag-year">2025</div>
+        <div class="mag-num">01</div>
+      </div>
+      <div class="mag-body">
+        <div class="mag-brand">Scuderia Ferrari · Circuit Gilles Villeneuve</div>
+        <h3>F1 Grand Prix du Canada 2025</h3>
+        <p>Official brand ambassador at the Scuderia Ferrari booth during the Canadian Grand Prix. Programme distribution, fan engagement, and merchandise operations on the most iconic street circuit in North America.</p>
+      </div>
+    </article>
+
+    <!-- MOLSON -->
+    <article class="mag-card reveal">
+      <div class="mag-img">
+        <img src="/media/1de1769f-6c36-45d4-a2d1-a397a3cc514d.jpg" alt="Molson Canadiens" style="object-position:center top;"/>
+        <div class="mag-badge">Molson</div>
+        <div class="mag-year">2025</div>
+        <div class="mag-num">02</div>
+      </div>
+      <div class="mag-body">
+        <div class="mag-brand">Molson x Montreal Canadiens</div>
+        <h3>Molson Canadiens Activation</h3>
+        <p>On-field brand activation for Molson  the official beer of the Canadiens. Fan engagement and prize distribution at outdoor activations across Montreal.</p>
+      </div>
+    </article>
+
+    <!-- CF MONTREAL -->
+    <article class="mag-card reveal">
+      <div class="mag-img">
+        <img src="/media/IMG_3044.jpg" alt="CF Montreal Saputo Stadium"/>
+        <div class="mag-badge">CF Montreal</div>
+        <div class="mag-year">2025</div>
+        <div class="mag-num">03</div>
+      </div>
+      <div class="mag-body">
+        <div class="mag-brand">CF Montreal · Saputo Stadium</div>
+        <h3>CF Montreal Match Days</h3>
+        <p>Pitchside operations at Saputo Stadium for CF Montreal home games throughout the 2025 MLS season.</p>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============================================
+     BRAND TICKER
+     ============================================ -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <div class="ticker-item"><span></span>Formula 1</div>
+    <div class="ticker-item"><span></span>CF Montreal</div>
+    <div class="ticker-item"><span></span>Molson</div>
+    <div class="ticker-item"><span></span>REM Metro</div>
+    <div class="ticker-item"><span></span>Promo Staff XM</div>
+    <div class="ticker-item"><span></span>Canadiens</div>
+    <div class="ticker-item"><span></span>Saputo Stadium</div>
+    <div class="ticker-item"><span></span>Circuit Gilles Villeneuve</div>
+    <!-- duplicate for seamless loop -->
+    <div class="ticker-item"><span></span>Formula 1</div>
+    <div class="ticker-item"><span></span>CF Montreal</div>
+    <div class="ticker-item"><span></span>Molson</div>
+    <div class="ticker-item"><span></span>REM Metro</div>
+    <div class="ticker-item"><span></span>Promo Staff XM</div>
+    <div class="ticker-item"><span></span>Canadiens</div>
+    <div class="ticker-item"><span></span>Saputo Stadium</div>
+    <div class="ticker-item"><span></span>Circuit Gilles Villeneuve</div>
+  </div>
+</div>
+
+<!-- QUOTE 2 -->
+<div class="quote-strip reveal">
+  <div class="q-inner">
+    <div class="q-mark">"</div>
+    <div class="q-text">The real flex is showing up the same way whether it's 10 people or 10,000.</div>
+    <div class="q-by"> Field rule #1</div>
+  </div>
+</div>
+
+<!-- ============================================
+     BRANDS
+     ============================================ -->
+<div class="sec-dark" id="brands">
+  <div class="inner">
+    <div class="sh reveal">
+      <span class="sh-n">02</span>
+      <h2>Brands</h2>
+      <div class="sh-line"></div>
+    </div>
+    <div class="brands-grid">
+      <div class="brand-card reveal">
+        <div class="brand-top">
+          <div class="brand-icon"></div>
+          <div>
+            <div class="brand-name">Formula 1</div>
+            <div class="brand-role">Brand Ambassador · 2025</div>
+          </div>
+        </div>
+        <div class="brand-desc">Official ambassador at the Scuderia Ferrari booth during the Canadian Grand Prix. Programme distribution and fan engagement on Circuit Gilles Villeneuve.</div>
+      </div>
+      <div class="brand-card reveal">
+        <div class="brand-top">
+          <div class="brand-icon"></div>
+          <div>
+            <div class="brand-name">CF Montreal</div>
+            <div class="brand-role">Event Staff · Saputo Stadium</div>
+          </div>
+        </div>
+        <div class="brand-desc">Pitchside operations and fan experience management for CF Montreal home games throughout the 2025 MLS season at Saputo Stadium.</div>
+      </div>
+      <div class="brand-card reveal">
+        <div class="brand-top">
+          <div class="brand-icon"></div>
+          <div>
+            <div class="brand-name">Molson</div>
+            <div class="brand-role">Field Activation · Canadiens</div>
+          </div>
+        </div>
+        <div class="brand-desc">Live brand activations for Molson x Montreal Canadiens. On-field engagement, prize distribution, and supporter interaction at events across Montreal.</div>
+      </div>
+      <div class="brand-card reveal">
+        <div class="brand-top">
+          <div class="brand-icon"></div>
+          <div>
+            <div class="brand-name">REM Metro</div>
+            <div class="brand-role">Brand Ambassador · Launch</div>
+          </div>
+        </div>
+        <div class="brand-desc">Ambassador for the REM Metro launch campaign  Montreal's new rapid transit network. Station-level engagement and merchandise distribution.</div>
+      </div>
+      <div class="brand-card reveal">
+        <div class="brand-top">
+          <div class="brand-icon"></div>
+          <div>
+            <div class="brand-name">Promo Staff XM</div>
+            <div class="brand-role">Agency · Montreal</div>
+          </div>
+        </div>
+        <div class="brand-desc">Deployed across multiple high-profile Montreal events through Promo Staff XM  the city's leading experiential marketing agency.</div>
+      </div>
+      <div class="brand-card reveal">
+        <div class="brand-top">
+          <div class="brand-icon"></div>
+          <div>
+            <div class="brand-name">Montreal Canadiens</div>
+            <div class="brand-role">Game Day Operations</div>
+          </div>
+        </div>
+        <div class="brand-desc">Supporting game day operations and fan activations tied to the Montreal Canadiens brand ecosystem across multiple events and venues.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     CONTACT
+     ============================================ -->
+<div class="sec-dark" id="contact">
+  <div class="ct-wrap">
+    <div class="ct-tag reveal">// book event moha</div>
+    <h2 class="ct-h reveal">LET'S<br>MAKE<br><span>NOISE.</span></h2>
+    <p class="ct-sub reveal">Brand activations · Fan engagement · Field operations.<br>If the crowd is there, I want to be there too.</p>
+    <div class="ct-btns reveal">
+      <a href="mailto:mhanou442@gmail.com" class="btn-red">mhanou442@gmail.com</a>
+      <a href="tel:4385310539" class="btn-ghost">438 531 0539</a>
+    </div>
+    <div class="ct-links reveal">
+      <a href="https://github.com/moha-hn" target="_blank">GitHub</a>
+      <a href="https://linkedin.com/in/mohamed-hanou-953b251a0" target="_blank">LinkedIn</a>
+    </div>
+    <div class="quote-final reveal">
+      <p class="qf-text">"I am whatever you say I am. If I wasn't, then why would I say I am?"</p>
+      <span class="qf-by"> Eminem · The Way I Am</span>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <span>Mohamed Hanou · Event Mode · Montreal 2025</span>
+  <a href="{% url 'home' %}" style="color:var(--red);">Switch to Dev Mode →</a>
+</footer>
+
+<script>
+// CURSOR
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function loop(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(loop);})();
+
+// PARTICLES
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+let W,H,pts=[];
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+resize();window.addEventListener('resize',resize);
+function Pt(){
+  this.x=Math.random()*W;this.y=Math.random()*H;
+  this.s=Math.random()*1.1+0.2;
+  this.vx=(Math.random()-.5)*.2;this.vy=(Math.random()-.5)*.2;
+  this.o=Math.random()*.18+.04;
+  const r=Math.random();
+  this.c=r<.5?`rgba(220,38,38,${this.o})`:r<.72?`rgba(255,80,80,${this.o})`:r<.86?`rgba(255,200,200,${this.o})`:`rgba(180,0,0,${this.o})`;
+}
+Pt.prototype.tick=function(){
+  this.x+=this.vx;this.y+=this.vy;
+  if(this.x<0)this.x=W;if(this.x>W)this.x=0;
+  if(this.y<0)this.y=H;if(this.y>H)this.y=0;
+  ctx.fillStyle=this.c;ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,Math.PI*2);ctx.fill();
+};
+for(let i=0;i<100;i++)pts.push(new Pt());
+(function loop(){ctx.clearRect(0,0,W,H);pts.forEach(p=>p.tick());requestAnimationFrame(loop);})();
+
+// MOBILE MENU
+document.getElementById('burger').onclick=()=>document.getElementById('mob').classList.toggle('open');
+document.querySelectorAll('.mob a').forEach(l=>l.onclick=()=>document.getElementById('mob').classList.remove('open'));
+
+// VIDEO PLAY ON CLICK
+function playVideo(item){
+  const vid=item.querySelector('video');
+  const btn=item.querySelector('.play-btn');
+  if(vid.paused){
+    vid.play();
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+  } else {
+    vid.pause();
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:white;margin-left:3px"><path d="M8 5v14l11-7z"/></svg>';
+  }
+}
+
+// SCROLL REVEAL
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});
+},{threshold:0.08});
+document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ACTIVE NAV
+const secs=document.querySelectorAll('[id]');
+const nls=document.querySelectorAll('.nav-links a:not(.nav-switch)');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(s=>{if(scrollY>=s.offsetTop-160)cur=s.id;});
+  nls.forEach(a=>{a.style.color=a.getAttribute('href')==='#'+cur?'var(--red)':'';});
+});
+
+// CURSOR RED ON HOVER
+document.querySelectorAll('a,button,.reel-item').forEach(el=>{
+  el.addEventListener('mouseenter',()=>{ring.style.transform='translate(-50%,-50%) scale(1.5)';ring.style.borderColor='rgba(220,38,38,0.8)';});
+  el.addEventListener('mouseleave',()=>{ring.style.transform='translate(-50%,-50%) scale(1)';ring.style.borderColor='rgba(220,38,38,0.5)';});
+});
+</script>
+</body>
+</html>
